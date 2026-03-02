@@ -14,3 +14,8 @@ target/*
 !.vscode/launch.json
 !.vscode/extensions.json
 _site/
+target/
+.aws/
+aws/
+*.zip
+*.pem
