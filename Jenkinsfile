@@ -8,10 +8,6 @@ pipeline {
 
     stages {
 
-        stage('Clone') {
-            steps {
-                git 'https://github.com/spring-projects/spring-petclinic.git'
-            }
         }
 
         stage('Build') {
