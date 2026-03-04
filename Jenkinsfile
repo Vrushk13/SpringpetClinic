@@ -2,15 +2,17 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = "ap-south-1"
-        ECR_REPO = "621703783626.dkr.ecr.ap-south-1.amazonaws.com/petclinic-repo"
+        AWS_REGION = 'ap-south-1'
+        ACCOUNT_ID = '621703783626'
+        ECR_REPO = 'petclinic-repo'
+        IMAGE_TAG = 'latest'
     }
 
     stages {
 
-        stage('Build') {
+        stage('Build Maven') {
             steps {
-                sh 'mvn clean package'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
@@ -23,8 +25,17 @@ pipeline {
         stage('Login to ECR') {
             steps {
                 sh '''
-                aws ecr get-login-password --region $AWS_REGION | \
-                docker login --username AWS --password-stdin 621703783626.dkr.ecr.ap-south-1.amazonaws.com
+                aws ecr get-login-password --region ap-south-1 | \
+                docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+                '''
+            }
+        }
+
+        stage('Tag Image') {
+            steps {
+                sh '''
+                docker tag petclinic-app:latest \
+                $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
                 '''
             }
         }
@@ -32,8 +43,8 @@ pipeline {
         stage('Push Image') {
             steps {
                 sh '''
-                docker tag petclinic-app:latest $ECR_REPO:latest
-                docker push $ECR_REPO:latest
+                docker push \
+                $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
                 '''
             }
         }
@@ -45,7 +56,7 @@ pipeline {
                 --cluster petclinic-cluster \
                 --service petclinic-service \
                 --force-new-deployment \
-                --region ap-south-1
+                --region $AWS_REGION
                 '''
             }
         }
