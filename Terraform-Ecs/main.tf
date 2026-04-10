@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "ap-south-1"
+  region = "eu-north-1"  
 }
 
 # -------------------
@@ -17,14 +17,14 @@ resource "aws_internet_gateway" "igw" {
 resource "aws_subnet" "public1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
-  availability_zone       = "ap-south-1a"
+  availability_zone       = "eu-north-1a"
   map_public_ip_on_launch = true
 }
 
 resource "aws_subnet" "public2" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.2.0/24"
-  availability_zone       = "ap-south-1b"
+  availability_zone       = "eu-north-1b"
   map_public_ip_on_launch = true
 }
 
@@ -68,6 +68,13 @@ resource "aws_security_group" "ecs_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+# ✅ ADD THIS (IMPORTANT)
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
     from_port   = 0
@@ -77,6 +84,48 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
+# -------------------
+# Load Balancer
+# -------------------
+
+resource "aws_lb" "petclinic_lb" {
+  name               = "petclinic-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.ecs_sg.id]
+  subnets            = [aws_subnet.public1.id, aws_subnet.public2.id]
+}
+
+resource "aws_lb_target_group" "petclinic_tg" {
+  name     = "petclinic-tg"
+  port     = 8085
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+  target_type = "ip"
+}
+
+resource "aws_lb_listener" "petclinic_listener" {
+  load_balancer_arn = aws_lb.petclinic_lb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.petclinic_tg.arn
+  }
+}
+# NEW: HTTPS listener
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.petclinic_lb.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn = "arn:aws:acm:eu-north-1:512190912096:certificate/c9735ab9-3dd3-4b1c-80af-e5f835fe8c87"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.petclinic_tg.arn
+  }
+}
 # -------------------
 # ECS Cluster
 # -------------------
@@ -95,12 +144,12 @@ resource "aws_ecs_task_definition" "task" {
   network_mode             = "awsvpc"
   cpu                      = "256"
   memory                   = "512"
-  execution_role_arn       = "arn:aws:iam::621703783626:role/ecsTaskExecutionRole"
+  execution_role_arn       = "arn:aws:iam::512190912096:role/ecsTaskExecutionRole"
 
   container_definitions = jsonencode([
     {
       name      = "petclinic"
-      image     = "621703783626.dkr.ecr.ap-south-1.amazonaws.com/petclinic-repo:latest"
+      image     = "512190912096.dkr.ecr.eu-north-1.amazonaws.com/petclinic-repo"
       essential = true
       portMappings = [
         {
@@ -128,4 +177,12 @@ resource "aws_ecs_service" "service" {
     security_groups = [aws_security_group.ecs_sg.id]
     assign_public_ip = true
   }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.petclinic_tg.arn
+    container_name   = "petclinic"
+    container_port   = 8085
+  }
+
+  depends_on = [aws_lb_listener.petclinic_listener]
 }

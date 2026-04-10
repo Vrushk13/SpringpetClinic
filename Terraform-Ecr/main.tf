@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "ap-south-1"
+  region = "eu-north-1"
 }
 
 resource "aws_ecr_repository" "petclinic_repo" {

@@ -1,0 +1,29 @@
+- name: Install Jenkins safely
+  hosts: jenkins
+  become: yes
+
+  tasks:
+
+    - name: Update system
+      apt:
+        update_cache: yes
+
+    - name: Install Java
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Download Jenkins .deb
+      get_url:
+        url: https://pkg.jenkins.io/debian-stable/binary/jenkins_2.452.1_all.deb
+        dest: /tmp/jenkins.deb
+
+    - name: Install Jenkins
+      apt:
+        deb: /tmp/jenkins.deb
+
+    - name: Start Jenkins
+      systemd:
+        name: jenkins
+        state: started
+        enabled: yes
