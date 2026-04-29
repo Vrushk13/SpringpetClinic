@@ -6,11 +6,12 @@ pipeline {
         ACCOUNT_ID = '512190912096'
         ECR_REPO = 'petclinic-repo'
         IMAGE_TAG = 'latest'
+        IMAGE_NAME = 'petclinic-app'
     }
 
     stages {
 
-         stage('Checkout Code') {
+        stage('Checkout Code') {
             steps {
                 checkout scm
             }
@@ -24,14 +25,14 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t petclinic-app .'
+                sh "docker build -t $IMAGE_NAME ."
             }
         }
 
         stage('Login to ECR') {
             steps {
                 sh '''
-                aws ecr get-login-password --region eu-north-1 | \
+                aws ecr get-login-password --region $AWS_REGION | \
                 docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
                 '''
             }
