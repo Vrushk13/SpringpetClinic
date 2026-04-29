@@ -1,21 +1,19 @@
-- name: Install Jenkins safely
-  hosts: jenkins
+---
+- name: Install Jenkins (working version)
+  hosts: jenkins_servers
   become: yes
 
   tasks:
-
-    - name: Update system
-      apt:
-        update_cache: yes
 
     - name: Install Java
       apt:
         name: openjdk-17-jdk
         state: present
+        update_cache: yes
 
-    - name: Download Jenkins .deb
-      get_url:
-        url: https://pkg.jenkins.io/debian-stable/binary/jenkins_2.452.1_all.deb
+    - name: Copy Jenkins package
+      copy:
+        src: jenkins_2.479.3_all.deb
         dest: /tmp/jenkins.deb
 
     - name: Install Jenkins
@@ -23,7 +21,7 @@
         deb: /tmp/jenkins.deb
 
     - name: Start Jenkins
-      systemd:
+      service:
         name: jenkins
         state: started
         enabled: yes
