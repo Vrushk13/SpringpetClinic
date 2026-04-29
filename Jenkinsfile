@@ -10,6 +10,12 @@ pipeline {
 
     stages {
 
+         stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Build Maven') {
             steps {
                 sh 'mvn clean package -DskipTests'
