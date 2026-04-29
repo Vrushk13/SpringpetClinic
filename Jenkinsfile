@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'ap-south-1'
-        ACCOUNT_ID = '621703783626'
+        AWS_REGION = 'eu-north-1'
+        ACCOUNT_ID = '512190912096'
         ECR_REPO = 'petclinic-repo'
         IMAGE_TAG = 'latest'
     }
@@ -25,7 +25,7 @@ pipeline {
         stage('Login to ECR') {
             steps {
                 sh '''
-                aws ecr get-login-password --region ap-south-1 | \
+                aws ecr get-login-password --region eu-north-1 | \
                 docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
                 '''
             }
