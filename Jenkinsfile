@@ -6,7 +6,6 @@ pipeline {
         ACCOUNT_ID = '512190912096'
         ECR_REPO = 'petclinic-repo'
         IMAGE_TAG = 'latest'
-        IMAGE_NAME = 'petclinic-app'
     }
 
     stages {
@@ -25,7 +24,7 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh "docker build -t $IMAGE_NAME ."
+                sh 'docker build -t petclinic .'
             }
         }
 
@@ -41,7 +40,7 @@ pipeline {
         stage('Tag Image') {
             steps {
                 sh '''
-                docker tag petclinic-app:latest \
+                docker tag petclinic:latest \
                 $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
                 '''
             }
